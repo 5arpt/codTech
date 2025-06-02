@@ -1,0 +1,142 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+// Function to write to a file (overwrite)
+void writeToFile(const string& filename) {
+    ofstream outFile(filename); // Overwrites existing file
+    if (!outFile) {
+        cerr << "Error opening file for writing" << endl;
+        return;
+    }
+
+    string data;
+    cout << "Enter text to write to the file (end with a single line containing only 'END'):\n";
+    while (true) {
+        getline(cin, data);
+        if (data == "END") break;
+        outFile << data << endl;
+    }
+
+    outFile.close();
+    cout << "Data written successfully.\n";
+}
+
+// Function to append to a file
+void appendToFile(const string& filename) {
+    ofstream outFile(filename, ios::app);
+    if (!outFile) {
+        cerr << "Error opening file for appending" << endl;
+        return;
+    }
+
+    string data;
+    cout << "Enter text to append to the file (end with a single line containing only 'END'):\n";
+    while (true) {
+        getline(cin, data);
+        if (data == "END") break;
+        outFile << data << endl;
+    }
+
+    outFile.close();
+    cout << "Data appended successfully.\n";
+}
+
+// Function to read from a file
+void readFromFile(const string& filename) {
+    ifstream inFile(filename);
+    if (!inFile) {
+        cerr << "Error opening file for reading" << endl;
+        return;
+    }
+
+    string line;
+    cout << "Contents of the file:\n";
+    while (getline(inFile, line)) {
+        cout << line << endl;
+    }
+
+    inFile.close();
+}
+
+int main() {
+    int choice;
+    string filename = "myfile.txt";
+
+    do {
+        cout << "\nMenu:\n";
+        cout << "1. Write to file\n";
+        cout << "2. Append to file\n";
+        cout << "3. Read from file\n";
+        cout << "4. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+        cin.ignore(); // To handle the leftover newline
+
+        switch (choice) {
+            case 1:
+                writeToFile(filename);
+                break;
+            case 2:
+                appendToFile(filename);
+                break;
+            case 3:
+                readFromFile(filename);
+                break;
+            case 4:
+                cout << "Exiting program.\n";
+                break;
+            default:
+                cout << "Invalid choice. Please try again.\n";
+        }
+    } while (choice != 4);
+
+    return 0;
+}
+
+
+Output:
+Menu:
+1. Write to file
+2. Append to file
+3. Read from file
+4. Exit
+Enter your choice: 1
+Enter text to write to the file (end with a single line containing only 'END'):
+This is the first line:
+Hello!
+END
+Data written successfully.
+
+Menu:
+1. Write to file
+2. Append to file
+3. Read from file
+4. Exit
+Enter your choice: 2
+Enter text to append to the file (end with a single line containing only 'END'):
+This the appended line
+Jack Here
+END
+Data appended successfully.
+
+Menu:
+1. Write to file
+2. Append to file
+3. Read from file
+4. Exit
+Enter your choice: 3
+Contents of the file:
+This is the first line:
+Hello!
+This the appended line
+Jack Here
+
+Menu:
+1. Write to file
+2. Append to file
+3. Read from file
+4. Exit
+Enter your choice: 4
+Exiting program.
