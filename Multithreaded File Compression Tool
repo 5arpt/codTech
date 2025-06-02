@@ -1,0 +1,106 @@
+#include <windows.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+#define MAX_THREADS 4
+
+struct ThreadData {
+    std::string* input;
+    size_t start;
+    size_t end;
+    std::string result;
+};
+
+// RLE compression
+std::string rle_compress(const std::string& str) {
+    std::string output;
+    int count = 1;
+    for (size_t i = 1; i <= str.length(); ++i) {
+        if (i < str.length() && str[i] == str[i - 1]) {
+            ++count;
+        } else {
+            output += str[i - 1];
+            output += std::to_string(count);
+            count = 1;
+        }
+    }
+    return output;
+}
+
+DWORD WINAPI compressChunk(LPVOID lpParam) {
+    ThreadData* data = static_cast<ThreadData*>(lpParam);
+    std::string chunk = data->input->substr(data->start, data->end - data->start);
+    data->result = rle_compress(chunk);
+    return 0;
+}
+
+int main() {
+    std::ifstream file("input.txt", std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open input.txt\n";
+        return 1;
+    }
+
+    std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    int numThreads = MAX_THREADS;
+    size_t size = data.size();
+    size_t chunkSize = size / numThreads;
+
+    HANDLE threads[MAX_THREADS];
+    ThreadData threadData[MAX_THREADS];
+
+    // Launch threads
+    for (int i = 0; i < numThreads; ++i) {
+        threadData[i].input = &data;
+        threadData[i].start = i * chunkSize;
+        threadData[i].end = (i == numThreads - 1) ? size : (i + 1) * chunkSize;
+        threads[i] = CreateThread(NULL, 0, compressChunk, &threadData[i], 0, NULL);
+    }
+
+    WaitForMultipleObjects(numThreads, threads, TRUE, INFINITE);
+
+    // Merge results carefully
+    std::string finalResult;
+    for (int i = 0; i < numThreads; ++i) {
+        if (i == 0) {
+            finalResult = threadData[i].result;
+        } else {
+            // Merge edge of previous and current
+            char lastChar = finalResult[finalResult.length() - 2];
+            int lastCount = finalResult[finalResult.length() - 1] - '0';
+
+            char currChar = threadData[i].result[0];
+            int currCount = threadData[i].result[1] - '0';
+
+            if (lastChar == currChar) {
+                // Combine counts
+                finalResult.pop_back(); // remove old count
+                finalResult.pop_back(); // remove old char
+                finalResult += lastChar;
+                finalResult += std::to_string(lastCount + currCount);
+                finalResult += threadData[i].result.substr(2); // rest
+            } else {
+                finalResult += threadData[i].result;
+            }
+        }
+    }
+
+    std::ofstream outFile("compressed.txt", std::ios::binary);
+    outFile << finalResult;
+    outFile.close();
+
+    std::cout << "Corrected compression completed.\n";
+    return 0;
+}
+
+Input file:
+66666777777333
+AAAATTTTTEEEEEE
+
+Compressed file:
+657633
+A4T5E6
